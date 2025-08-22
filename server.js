@@ -13,12 +13,10 @@ app.get('/hls', (req, res) => {
     const mp3Url = req.query.url;
     if (!mp3Url) return res.status(400).send('Falta parámetro URL');
 
-    const outputDir = path.join(__dirname, 'hls-temp');
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
+    const outputDir = '/tmp/hls-temp';
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
     const playlist = path.join(outputDir, 'playlist.m3u8');
-
-    // Limpiar playlist previa
     if (fs.existsSync(playlist)) fs.unlinkSync(playlist);
 
     ffmpeg(mp3Url)
@@ -41,6 +39,7 @@ app.get('/hls', (req, res) => {
         })
         .run();
 });
+
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
