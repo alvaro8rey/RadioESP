@@ -11,13 +11,20 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/hls', (req, res) => {
     const mp3Url = req.query.url;
-    if (!mp3Url) return res.status(400).send('Falta parámetro URL');
+    if (!mp3Url) {
+        console.log('Error: falta parámetro URL');
+        return res.status(400).send('Falta parámetro URL');
+    }
+
+    console.log('Solicitado MP3:', mp3Url);
 
     const outputDir = '/tmp/hls-temp';
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
     const playlist = path.join(outputDir, 'playlist.m3u8');
     if (fs.existsSync(playlist)) fs.unlinkSync(playlist);
+
+    console.log('Iniciando FFmpeg...');
 
     ffmpeg(mp3Url)
         .outputOptions([
@@ -29,8 +36,14 @@ app.get('/hls', (req, res) => {
             '-hls_flags delete_segments'
         ])
         .output(playlist)
+        .on('start', (commandLine) => {
+            console.log('FFmpeg start:', commandLine);
+        })
+        .on('progress', (progress) => {
+            console.log('Progreso FFmpeg:', progress);
+        })
         .on('end', () => {
-            console.log('HLS generado:', playlist);
+            console.log('HLS generado correctamente en:', playlist);
             res.sendFile(playlist);
         })
         .on('error', (err) => {
@@ -39,6 +52,7 @@ app.get('/hls', (req, res) => {
         })
         .run();
 });
+
 
 
 app.listen(PORT, () => {
